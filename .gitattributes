@@ -1,0 +1,11 @@
+# Archivos de datos: siempre binarios (git no toca finales de línea ni intenta mostrar diferencias)
+*.bin  binary
+*.zip  binary
+*.gpkg binary
+*.kmz  binary
+*.jpg  binary
+*.png  binary
+*.webp binary
+*.woff2 binary
+# Insumos del pipeline: se guardan tal cual, byte a byte (garantía de reproducibilidad)
+data-pipeline/raw/** -text

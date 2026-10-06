@@ -1,0 +1,12 @@
+node_modules/
+dist/
+data-pipeline/_tmp_*/
+.DS_Store
+# Los archivos de data-pipeline/raw/ SÍ van al repo (el más grande pesa unos 43 MB; GitHub avisa desde 50 MB):
+# son la garantía de reproducibilidad. El Capítulo IV completo (200 MB) no; ver data-pipeline/README.md.
+# Respaldos comprimidos del proyecto (no van al repo; GitHub rechaza archivos de más de 100 MB)
+*.rar
+# Configuración local de Claude Code (no va al repo)
+.claude/
+# CSV anuales de producción de la SE (cientos de MB cada uno): se filtran con data-pipeline/filtrar_mensuales.py
+datasets-*/

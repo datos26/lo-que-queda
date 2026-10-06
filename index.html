@@ -1,0 +1,276 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lo que queda… cuando el petróleo se va</title>
+  <meta name="description" content="Lo que queda cuando el petróleo se va: %POZOS_CUENCA% pozos de la Cuenca del Golfo San Jorge, y una ciudad que creció encima. Datos abiertos de la Secretaría de Energía y del Censo 2022.">
+  <!-- Mapa base (OpenFreeMap): la conexión se abre ya, así el estilo y las teselas llegan antes -->
+  <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+  <!-- Tipografías propias (public/fonts): se piden ya, en paralelo con la hoja de estilos -->
+  <!-- Ícono de la pestaña: la torre del Pozo N° 2 (public/favicon.svg; el .ico y el de 180 px salen de scripts/favicon.mjs) -->
+  <link rel="icon" href="./favicon.ico" sizes="16x16 32x32 48x48">
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="preload" href="./fonts/fraunces-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="./fonts/source-sans-3-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="./src/styles.css">
+</head>
+<body class="sin-leyenda">
+  <!-- Recorrido guiado: una tarjeta por paso. Los textos viven en src/story.js -->
+  <main id="story" aria-label="Recorrido guiado">
+    <!-- La portada nace activa (tarjeta sin atenuar): el recorrido se conecta recién cuando llega el mapa -->
+    <section class="step activa" data-step="0"><div class="card card-portada">
+      <figure class="foto-portada">
+        <!-- WebP con JPEG de respaldo (scripts/optimizar_fotos.py). Es lo más grande de la portada: se pide primero. -->
+        <picture>
+          <source srcset="./img/portada.webp" type="image/webp">
+          <img src="./img/portada.jpg" width="1000" height="563" fetchpriority="high" alt="Restos oxidados de un aparato de bombeo en lo alto de un cerro, frente al mar, en la entrada de Caleta Córdova">
+        </picture>
+        <!-- Foto de los autores (sin crédito hasta el fallo: seudónimo). A metros del pozo CFP.Ch.SM-549. -->
+        <figcaption>Restos de un aparato de bombeo en la entrada de Caleta Córdova.</figcaption>
+      </figure>
+      <p class="kicker">Exploración interactiva</p>
+      <h1 class="titulo">Lo que queda</h1>
+      <p class="bajada">cuando el petróleo se va</p>
+      <p class="descripcion" id="portada-texto"></p>
+      <button type="button" class="empezar" id="btn-empezar">
+        <span class="empezar-texto">Desplazá para empezar</span>
+        <svg class="empezar-flecha" width="14" height="16" viewBox="0 0 14 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 1 L7 14 M1.5 8.5 L7 14 L12.5 8.5"/></svg>
+      </button>
+      <p class="accesos">
+        <a href="#explorar" class="enlace-chico" data-ir="explorar">Ir directo al mapa</a>
+        <span aria-hidden="true">·</span>
+        <a href="#metodologia" class="enlace-chico" data-abrir="metodologia">Metodología</a>
+        <span aria-hidden="true">·</span>
+        <a href="#video" class="enlace-chico" data-abrir="video">Videotutorial (1 min)</a>
+      </p>
+      <p class="fuente" id="portada-fuente"></p>
+    </div></section>
+    <!-- Los pasos 1..8 se generan desde src/story.js -->
+  </main>
+
+  <!-- Panel del visualizador (…/#explorar) -->
+  <aside id="explore" class="hidden" aria-label="Filtros del visualizador">
+    <div class="explore-head">
+      <nav class="explore-nav" aria-label="Salir del visualizador">
+        <a href="./" class="enlace-chico" data-ir="inicio"><span aria-hidden="true">←</span> Volver al inicio</a>
+        <a href="#metodologia" class="enlace-chico" data-abrir="metodologia">Metodología</a>
+      </nav>
+      <h2 id="explore-titulo" tabindex="-1">Explorá los <span id="n-total"></span> pozos</h2>
+      <p class="muted" aria-live="polite"><span class="panel-cargando">Cargando el mapa…</span><span class="panel-conteo">Mostrando <strong id="n-visible"></strong></span></p>
+      <!-- Solo en celular: el panel es una hoja inferior que se pliega para ver el mapa entero -->
+      <button type="button" id="btn-plegar" class="plegar" aria-expanded="true" aria-controls="explore-cuerpo">Ocultar filtros</button>
+    </div>
+    <div id="explore-cuerpo">
+    <fieldset id="f-estado" class="filtro">
+      <legend>Estado declarado</legend>
+      <!-- se llena desde explore.js con leyenda + conteos -->
+    </fieldset>
+    <div class="filtro">
+      <label for="f-empresa">Operadora</label>
+      <select id="f-empresa"><option value="">Todas</option></select>
+    </div>
+    <div class="filtro">
+      <label for="f-yacimiento">Yacimiento</label>
+      <select id="f-yacimiento"><option value="">Todos</option></select>
+    </div>
+    <div class="filtro">
+      <label for="f-provincia">Provincia</label>
+      <select id="f-provincia">
+        <option value="">Ambas</option>
+        <option value="1">Chubut</option>
+        <option value="2">Santa Cruz</option>
+      </select>
+    </div>
+    <div class="filtro">
+      <label for="f-barrio">Barrio de Comodoro</label>
+      <select id="f-barrio"><option value="">Todos</option></select>
+      <p class="nota" id="f-barrio-nota" hidden></p>
+    </div>
+    <fieldset id="f-sinprod" class="filtro">
+      <legend>Tiempo sin producir</legend>
+      <!-- se llena desde explore.js: un botón por tramo, con su conteo y su barra -->
+      <p class="nota" id="f-sinprod-nota"></p>
+    </fieldset>
+    <div class="filtro filtro-inline">
+      <input type="checkbox" id="f-poblacion">
+      <label for="f-poblacion">Ver población por radio censal (Comodoro)</label>
+    </div>
+    <div class="filtro filtro-inline">
+      <input type="checkbox" id="f-barrios">
+      <label for="f-barrios">Ver barrios de Comodoro</label>
+    </div>
+    <div class="filtro filtro-inline">
+      <input type="checkbox" id="f-concesiones">
+      <label for="f-concesiones">Ver concesiones de explotación</label>
+    </div>
+    <p class="nota" id="f-conc-nota" hidden></p>
+    <p class="nota">Tocá un radio censal, un barrio o una concesión para ver sus datos (el pozo tiene prioridad). Con teclado: enfocá el mapa, movelo con las flechas y apretá Enter para consultar el centro.</p>
+    <div class="filtro">
+      <label for="f-buscar">Buscar por sigla</label>
+      <input type="search" id="f-buscar" placeholder="Ej.: CH-679" autocomplete="off" aria-describedby="f-resultados">
+      <div id="f-resultados" aria-live="polite"></div>
+    </div>
+    <div class="filtro">
+      <button type="button" id="btn-csv" class="empezar">Descargar estos pozos (CSV)</button>
+      <p class="nota">Los que se ven con los filtros elegidos. Datos de la Secretaría de Energía (CC-BY 4.0) y barrios de la Municipalidad de Comodoro Rivadavia (CC BY-SA 4.0).</p>
+    </div>
+    <p class="fuente">Fuentes: Secretaría de Energía (Capítulo IV – Pozos, CC-BY 4.0); Municipalidad de Comodoro Rivadavia (límites y radios censales 2022). <a href="#metodologia" data-abrir="metodologia">Metodología</a></p>
+    </div>
+  </aside>
+
+  <!-- Ficha de pozo al hacer clic -->
+  <div id="ficha" class="hidden" role="dialog" aria-labelledby="ficha-titulo"></div>
+
+  <!-- Leyenda compacta siempre visible durante el recorrido -->
+  <div id="leyenda" role="group" aria-label="Leyenda del mapa"></div>
+
+  <!-- Avisos breves del mapa en el visualizador ("Estás fuera de la cuenca…"): src/explore.js -->
+  <p id="aviso-mapa" class="aviso-mapa" role="status" hidden></p>
+
+  <!-- Mapa fijo detrás de todo (va al final para que el teclado recorra primero el texto) -->
+  <div id="map"></div>
+
+  <!-- Ventana de Metodología (…/#metodologia): un <dialog> que abre y cierra src/navegacion.js.
+       Metodología y fuentes (plan 3.2). BORRADOR del 26/09 armado con los textos ya escritos en docs/ (spec §2 y §5,
+       formulario.md, investigacion-contexto.md, data-pipeline/README.md): la redacción final es de los autores.
+       Las cifras NO se escriben acá: van como <span data-cifra="ruta.en.resumen"> y las completa src/metodologia.js
+       desde resumen.json (data-formato="cantidad" cuenta claves; "mes" convierte "2017-01" en "enero de 2017").
+       La lista de datasets y la tabla de estados también salen de resumen.json. -->
+  <!-- Ventana de una historia de la tarjeta 7: la completa src/story.js (los textos viven en definirPasos()). -->
+  <dialog id="ventana-historia" class="ventana ventana-historia" aria-labelledby="historia-titulo">
+    <button type="button" class="cerrar" data-cerrar-historia aria-label="Cerrar la historia">×</button>
+    <div class="ventana-cuerpo">
+      <p class="kicker" id="historia-meta"></p>
+      <h2 id="historia-titulo"></h2>
+      <figure class="historia-foto" hidden><picture></picture><figcaption></figcaption></figure>
+      <p id="historia-copete"></p>
+      <!-- el resto de la historia, el pozo según el registro y las fuentes: se abre con «Seguir leyendo» -->
+      <div class="historia-mas" id="historia-mas" hidden>
+        <p id="historia-texto" tabindex="-1"></p>
+        <section class="historia-registro" id="historia-registro" aria-labelledby="historia-registro-titulo" hidden>
+          <h3 class="historia-sub" id="historia-registro-titulo"></h3>
+          <ul class="historia-pozos"></ul>
+          <p class="historia-nota">Estado declarado por la operadora ante la Secretaría de Energía; no describe el estado físico del pozo.<span id="historia-antes" hidden> «Antes, YPF»: la operadora que figuraba en el listado de la Secretaría de Energía de 2025, no necesariamente la que estaba a cargo cuando pasó la historia.</span></p>
+        </section>
+        <h3 class="historia-sub">Fuentes</h3>
+        <p class="fuente" id="historia-fuente"></p>
+      </div>
+      <button type="button" class="historia-leer" id="historia-leer" aria-expanded="false" aria-controls="historia-mas"></button>
+      <nav class="historia-nav" aria-label="Otras historias">
+        <button type="button" class="empezar" data-historia-paso="-1">← Anterior</button>
+        <button type="button" class="empezar" data-historia-paso="1">Siguiente →</button>
+      </nav>
+    </div>
+  </dialog>
+
+  <dialog id="ventana-metodologia" class="ventana" aria-labelledby="metodologia-titulo">
+    <button type="button" class="cerrar" data-cerrar-ventana aria-label="Cerrar la metodología">×</button>
+    <div class="ventana-cuerpo metodologia">
+      <h2 id="metodologia-titulo">Metodología y fuentes</h2>
+      <!-- Texto de los autores (01/10): el mismo de la «Breve descripción metodológica» del formulario (docs/formulario.md). -->
+      <h3>Breve descripción metodológica (194 palabras)</h3>
+      <p>Para la producción de esta pieza se utilizaron datos abiertos de la Secretaría de Energía y de la Municipalidad de Comodoro Rivadavia y datos del INDEC (EPH).</p>
+      <p>La visualización consiste en un recorrido de ocho pasos, desde el nivel nacional al barrio, y finaliza en un mapa con filtros y descarga de datos en CSV.</p>
+      <p>Un script de Python procesa los datos y agrupa los <span data-cifra="grupos_de_estado" data-formato="cantidad">17</span> estados declarados de los pozos en cuatro categorías, descarta fechas inválidas, calcula cuándo produjo cada pozo por última vez y lo ubica en el ejido, en el barrio y en el radio censal. Las cifras sobre los pozos, su producción y la población provienen de ese script. «Abandonado» refiere al estado declarado por la operadora y no a la condición física del pozo; del mismo modo, un pozo «activo» no necesariamente registra producción.</p>
+      <p>Se utilizó Claude (Anthropic), con supervisión humana, para la limpieza y organización de los datos y asistencia en el código de procesamiento y del desarrollo web. No se generaron imágenes con IA. Las decisiones de diseño visual, la selección de contenidos, los textos finales y la composición de la pieza fueron realizados por los autores.</p>
+
+      <h3>Sobre los autores</h3>
+      <!-- Texto de los autores (03/10). Sin nombres hasta el fallo del jurado (seudónimo). -->
+      <p>Somos de Comodoro Rivadavia, apasionados por los datos abiertos y por las historias que estos permiten contar. Crecimos en una ciudad profundamente atravesada por la actividad petrolera y quisimos volver visible una realidad que, por cotidiana, muchas veces termina naturalizándose. En esta pieza combinamos, además del análisis de datos, investigación documental, trabajo de campo y fotografía.</p>
+
+      <h3>Los datos</h3>
+      <p>Las cifras sobre los pozos, su producción y la población se calculan con un script de Python (<code>data-pipeline/procesar.py</code>) a partir de estos datos abiertos:</p>
+      <ul class="met-lista" id="met-datasets"></ul>
+
+      <h3>Qué quiere decir cada estado</h3>
+      <p>Cada operadora declara ante la Secretaría de Energía el estado de cada uno de sus pozos, en <span data-cifra="grupos_de_estado" data-formato="cantidad"></span> categorías. Para el mapa se agrupan en cuatro con esta tabla de equivalencias. Es el estado declarado por la operadora: no describe el estado físico del pozo. «Abandonado» quiere decir que la operadora lo dio de baja según la <a href="https://servicios.infoleg.gob.ar/infolegInternet/anexos/30000-34999/31996/norma.htm" target="_blank" rel="noopener">Resolución SE 5/96<span class="sr-only"> (se abre en otra pestaña)</span></a>.</p>
+      <div class="met-tabla-scroll">
+        <table class="met-tabla" id="met-estados">
+          <caption>Estados declarados en la Cuenca del Golfo San Jorge y grupo que se usa en el mapa</caption>
+          <thead><tr><th scope="col">Grupo en el mapa</th><th scope="col">Estado declarado</th><th scope="col" class="num">Pozos</th></tr></thead>
+        </table>
+      </div>
+      <p>«Activo» incluye pozos en inyección, en mantenimiento de presión y en reparación: de los <span data-cifra="cuenca.Activo"></span> pozos activos de la cuenca, <span data-cifra="cuenca.extraccion_efectiva"></span> declaran extracción efectiva.</p>
+
+      <h3>Cómo se procesaron</h3>
+      <ul class="met-lista">
+        <li>Del registro de todo el país (<span data-cifra="pais.pozos"></span> pozos) se toman los <span data-cifra="cuenca.total"></span> de la Cuenca del Golfo San Jorge.</li>
+        <li>Fechas de perforación: se descartan las de relleno (el 1/1/1902 y cualquier fecha anterior al 1/1/1907); son <span data-cifra="calidad.fechas_relleno_descartadas"></span>.</li>
+        <li>Con sus coordenadas, cada pozo se ubica en el ejido de Comodoro Rivadavia, en un radio censal del Censo 2022 y en un barrio.</li>
+        <li>Descarga: desde el visualizador se bajan en CSV los pozos que se ven con los filtros elegidos (sin filtros, los <span data-cifra="cuenca.total"></span>), con su sigla, operadora, yacimiento, provincia, grupo de estado declarado, tiempo sin producir, si están en el ejido, barrio y coordenadas.</li>
+        <li>Tiempo sin producir: meses desde el último con petróleo o gas mayor que cero en la serie mensual, que va de <span data-cifra="trayectoria.cobertura.desde" data-formato="mes"></span> a <span data-cifra="trayectoria.cobertura.hasta" data-formato="mes"></span>. La serie llega hasta el último mes cuyo plazo de declaración ya venció a la fecha de descarga: el Capítulo IV se entrega antes del día 20 del mes siguiente (<a href="https://www.argentina.gob.ar/normativa/nacional/312880/texto">Res. SE 319/93</a>).</li>
+        <li>«Más de cinco años sin producir» exige 60 meses declarados sin producción: algunas operadoras dejan de declarar sus pozos antes del final de la serie (<span data-cifra="trayectoria.dejaron_de_declararse"></span> pozos con <span data-cifra="trayectoria.meses_sin_declarar_minimo"></span> meses o más sin declarar, muchos ya abandonados) y esos meses no se cuentan.</li>
+        <li>Concesiones: un pozo está «en un área que no figura como concesión vigente» cuando el código de su área no aparece en la capa de concesiones de explotación de la Secretaría de Energía. Son <span data-cifra="concesiones.pozos_en_area_sin_concesion"></span> pozos.</li>
+        <li>Zona norte: los <span data-cifra="zona_norte.barrios"></span> barrios al norte del cerro Chenque según el relevamiento de barrios de la Municipalidad. Un pozo está en zona norte si cae dentro de uno de esos barrios; los que quedan en los yacimientos entre barrios no se cuentan. La población es la del Censo 2022 por barrio que publica la Municipalidad (<span data-cifra="zona_norte.poblacion"></span> habitantes en zona norte); los barrios que no figuran en esa tabla (<span data-cifra="zona_norte.barrios_sin_poblacion" data-formato="lista"></span>) quedan fuera del porcentaje.</li>
+      </ul>
+
+      <h3>Límites del dato</h3>
+      <ul class="met-lista">
+        <li>El estado lo declara cada operadora. Esta pieza no verifica en el terreno la situación de ningún pozo.</li>
+        <li><span data-cifra="calidad.sin_fecha_perforacion"></span> pozos de la cuenca no tienen fecha de perforación en el registro.</li>
+        <li>Los <span data-cifra="cuenca.sin_empresa.total"></span> pozos sin empresa asignada pueden ser vacíos de carga del registro.</li>
+        <li>La primera producción viene de un padrón que empieza en enero de 2006: «ya figuraba en 2006» no es una fecha de perforación.</li>
+        <li>La serie mensual empieza en <span data-cifra="trayectoria.cobertura.desde" data-formato="mes"></span>: un pozo que figura abandonado ese mes ya lo estaba al empezar la serie.</li>
+        <li>El porcentaje de población se calcula sobre la suma de los radios censales del ejido de Comodoro Rivadavia (<span data-cifra="poblacion.comodoro.total"></span> habitantes); los de Rada Tilly quedan afuera.</li>
+        <li>No se calculan distancias a viviendas ni se afirma nada sobre contaminación: el dato no lo permite.</li>
+      </ul>
+
+      <h3>Fuentes de contexto</h3>
+      <ul class="met-lista">
+        <li><a href="https://servicios.infoleg.gob.ar/infolegInternet/anexos/30000-34999/31996/norma.htm">Resolución SE 5/96</a> (InfoLeg): normas y procedimientos para el abandono de pozos.</li>
+        <li><a href="https://www.sec.gov/Archives/edgar/data/904851/000119312525067155/d866694d20f.htm">YPF, Form 20-F 2024</a>, Nota 17 (SEC): provisión por abandono de pozos.</li>
+        <li><a href="https://sistemas.chubut.gov.ar/digesto/sistema/consulta.php?idile1=87339">Decreto de Chubut 1509/2024</a> (Digesto de Chubut; Boletín Oficial del 29/10/2024): cesión de Escalante–El Trébol a PECOM.</li>
+        <li><a href="https://www.sec.gov/Archives/edgar/data/904851/000119312526057719/d47643d6k.htm">YPF, Form 6-K del 19/2/2026</a> (SEC): adjudicación de Manantiales Behr a PECOM y San Benito Upstream.</li>
+        <li><a href="https://www.comodoro.gov.ar/2024/08/27/el-municipio-intervino-ante-un-nuevo-derrame-de-petroleo-en-un-yacimiento-ypf/">Municipalidad de Comodoro Rivadavia, 27/8/2024</a>: surgencia del pozo CH-679.</li>
+        <li><a href="https://www.argentina.gob.ar/noticias/13-de-diciembre-descubrimiento-de-petroleo-en-comodoro-rivadavia">Ministerio de Economía</a>: descubrimiento del petróleo en Comodoro Rivadavia y creación de YPF por Hipólito Yrigoyen, quince años después.</li>
+        <li>Decreto del Poder Ejecutivo Nacional del 14/12/1907 (sin número; Figueroa Alcorta y Pedro Ezcurra), dictado según el art. 15 de la <a href="https://www.argentina.gob.ar/normativa/nacional/norma-285291/texto">Ley 4.167</a>: prohíbe la denuncia de pertenencias mineras y los permisos de cateo «en un radio de 5 leguas kilométricas, a todo rumbo, contándose desde el centro de la población» (una legua kilométrica son 5 km). El texto no está publicado en línea: se cita según Marcos Kaplan, «La primera fase de la política petrolera argentina (1907-1916)», <i>Desarrollo Económico</i> 13 (1974), y Nicolás Gadano, <i>Historia del petróleo en la Argentina 1907-1955</i> (2006). Lo resume la <a href="https://www.casarosada.gob.ar/informacion/actividad-oficial/9-noticias/50819-dia-nacional-del-petroleo-a-117-anos-de-su-descubrimiento">Casa Rosada, 13/12/2024</a>.</li>
+        <li><a href="https://www.argentina.gob.ar/economia/energia/vaca-muerta/historia">Historia de Vaca Muerta</a> (Secretaría de Energía): formación de la Cuenca Neuquina.</li>
+        <li><a href="https://www.argentina.gob.ar/noticias/por-el-crecimiento-de-vaca-muerta-la-produccion-de-petroleo-y-gas-fue-record-en-mayo">Argentina.gob.ar, 2/7/2019</a>: el crecimiento de la producción se explica por el no convencional de Vaca Muerta.</li>
+        <li><a href="https://www.comodoro.gov.ar/miciudad/relevamiento-de-barrios/zona-norte/">Municipalidad de Comodoro Rivadavia, Relevamiento de barrios</a>: barrios de zona norte.</li>
+        <li><a href="https://www.comodoro.gov.ar/2025/12/12/astra-celebro-su-113-aniversario/">Municipalidad de Comodoro Rivadavia, 12/12/2025</a>: Astra nació como asentamiento minero y petrolero.</li>
+        <li><a href="https://www.comodoro.gov.ar/2021/08/03/se-presentara-el-libro-historico-sobre-km-5-historia-de-un-pueblo-entre-pozos-y-trenes/">Municipalidad de Comodoro Rivadavia, 3/8/2021</a>: el campamento petrolero de Km 5.</li>
+        <li><a href="https://www.comodoro.gov.ar/miciudad/2024/12/04/relevamiento-de-barrios-zona-norte-general-mosconi/">Municipalidad de Comodoro Rivadavia, ficha del barrio General Mosconi</a>: el barrio es Km 3.</li>
+        <li><a href="https://www.comodoro.gov.ar/2024/03/20/coluccio-con-esta-ordenanza-nos-ponemos-a-la-altura-de-la-industria-hidrocarburifera/">Municipalidad de Comodoro Rivadavia, 20/3/2024</a>: los radios de seguridad de los pozos y el servicio de gas.</li>
+        <li><a href="https://www.comodoro.gov.ar/archivos/boletin_oficial/pdf/bol_002-2020.pdf">Resolución municipal 3404-19</a> (Boletín Oficial municipal N° 002, 3/1/2020): asentamiento de Don Bosco, «zona de riesgo» por pozos con radio de 60 m.</li>
+        <li><a href="https://www.comodoro.gov.ar/2024/09/26/el-municipio-avanza-en-el-relevamiento-de-pozos-petroleros-inactivos-dentro-su-ejido/">Municipalidad de Comodoro Rivadavia, 26/9/2024</a>: relevamiento de pozos inactivos del ejido.</li>
+        <li>Historias del paso 7: cada una cita la nota periodística, el comunicado oficial o el plano municipal del que sale. El estado de cada pozo y sus fechas son los del registro de la Secretaría de Energía.</li>
+      </ul>
+
+      <h3>Uso de inteligencia artificial</h3>
+      <h4>Para qué se utilizó</h4>
+      <p>Se utilizó Claude (Anthropic), bajo supervisión humana, como herramienta de apoyo para la limpieza, organización y cruce de datos, y para la asistencia en la escritura y revisión del código del script de procesamiento y del desarrollo web. En la investigación documental también sirvió de apoyo para buscar y cotejar fuentes, a partir de los casos y ejemplos que plantearon los autores. Su finalidad fue agilizar el trabajo.</p>
+      <h4>Para qué no se utilizó</h4>
+      <p>La IA no se utilizó para generar imágenes, gráficos, mapas ni la visualización final. La verificación final de las fuentes, el trabajo de campo, las fotografías, la narrativa visual, el guion, la selección y jerarquización de contenidos, las decisiones de diseño y la composición final de la pieza fueron realizados por los autores.</p>
+
+      <h3>Créditos y licencias</h3>
+      <ul class="met-lista">
+        <li>Fotos: las fotos sin crédito (la portada, las de los pasos 3 a 6 y las de ocho historias del paso 7) son de los autores de esta pieza. Pozo N° 2, diciembre de 1907, Fototeca de Comodoro Rivadavia – Archivo Histórico Municipal (negativo cedido por el Archivo General de la Nación). Historias del Cañadón La Francesa y del arroyo Belgrano (paso 7): Municipalidad de Comodoro Rivadavia, fotos de sus gacetillas de prensa. Paso 8: <a href="https://www.instagram.com/mauroesains/" target="_blank" rel="noopener">Mauro Esains<span class="sr-only"> (se abre en otra pestaña)</span></a>.</li>
+        <li>Mapa base: <a href="https://openfreemap.org/">OpenFreeMap</a>, con datos de <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> (ODbL) y <a href="https://openmaptiles.org/">OpenMapTiles</a>.</li>
+        <li>Imagen satelital (visualizador): © Esri — Esri, Vantor, Earthstar Geographics y la comunidad de usuarios GIS.</li>
+        <li>Privacidad: si pedís tu ubicación en el visualizador, se usa solo en tu dispositivo para mostrarte en el mapa; no se guarda, no se envía y no se calcula nada con ella. El video de la portada está en YouTube, en su modo de privacidad mejorada (youtube-nocookie.com): se carga solo si abrís su ventana, y al reproducirlo YouTube puede guardar datos en tu navegador.</li>
+        <li>Música del video: «Phase Shift», de Scott Buckley (CC BY 4.0, <a href="https://www.scottbuckley.com.au/">scottbuckley.com.au</a>).</li>
+        <li>Tipografías: Fraunces y Source Sans 3 (SIL Open Font License; licencias en <code>public/fonts/</code>).</li>
+        <li>Íconos de cinco historias del paso 7 (Palazzo, Laprida, Km 3, Las Orquídeas y la rotonda): <a href="https://tabler.io/icons">Tabler Icons</a>, © 2020-2026 Paweł Kuna (<a href="https://github.com/tabler/tabler-icons/blob/main/LICENSE">licencia MIT</a>).</li>
+        <li>Programas: MapLibre GL JS (BSD-3-Clause), deck.gl (MIT), D3 (ISC), Scrollama (MIT), Vite (MIT).</li>
+        <li>Esta pieza: código con licencia MIT; datos derivados con licencia CC-BY 4.0, citando las fuentes de arriba.</li>
+        <li>Repositorio con el código y los datos: <a href="https://github.com/datos26/lo-que-queda">github.com/datos26/lo-que-queda</a>.</li>
+      </ul>
+    </div>
+  </dialog>
+
+  <!-- Ventana del video (…/#video): la abre y la cierra src/navegacion.js. El reproductor de YouTube (modo de privacidad
+       mejorada) se crea al abrirla y se borra al cerrarla, así el video se detiene y no se carga nada de YouTube antes.
+       Para cambiar el video, basta con cambiar data-youtube (el identificador del link youtu.be/…). -->
+  <dialog id="ventana-video" class="ventana ventana-video" aria-labelledby="video-titulo" data-youtube="lJ91vFpKvfM">
+    <button type="button" class="cerrar" data-cerrar-ventana aria-label="Cerrar el video">×</button>
+    <div class="ventana-cuerpo">
+      <h2 id="video-titulo" class="video-titulo">Lo que queda, en un minuto</h2>
+      <div class="video-marco"></div>
+    </div>
+  </dialog>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

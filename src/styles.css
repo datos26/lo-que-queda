@@ -1,0 +1,307 @@
+/* Tipografías servidas desde el propio sitio (public/fonts, licencia OFL): la portada no espera a otro servidor.
+   Archivos variables de Google Fonts: uno por subconjunto sirve para todos los pesos. El "latin-ext" solo se baja
+   si aparece un carácter de ese rango. */
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 300 600; font-display: swap; src: url('/fonts/fraunces-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Fraunces'; font-style: normal; font-weight: 300 600; font-display: swap; src: url('/fonts/fraunces-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Source Sans 3'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/fonts/source-sans-3-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Source Sans 3'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/fonts/source-sans-3-latin-ext.woff2') format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+
+/* Paleta "Sobria · papel" — ver src/paleta.js y docs/specs §4 */
+:root {
+  --fondo: #f3efe7;
+  --tarjeta: rgba(255, 252, 246, 0.94);
+  --tarjeta-solida: #fffcf6; /* el mismo papel de las tarjetas, sin transparencia (ventana de Metodología) */
+  --texto: #17181b;
+  --texto-sec: #5a5b5e;
+  --borde: #d9d2c3;
+  --borde-control: #8a857c; /* borde de selects y campos: 3,7:1 sobre blanco (WCAG 1.4.11 pide 3:1) */
+  --activo: #1f5fa8;
+  --inactivo: #b97a00;
+  --a-abandonar: #a3391e;
+  --abandonado: #7b7f88;
+  /* acento de la portada: el óxido de la bomba de la foto. SOLO en la bajada de la portada: se parece a
+     "Inactivo" y "A abandonar", así que no se usa en el mapa ni cerca de datos. Contraste 4,8:1 sobre la tarjeta. */
+  --acento-portada: #b5532b;
+  --serif: 'Fraunces', Georgia, serif;
+  --sans: 'Source Sans 3', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--fondo); color: var(--texto); font-family: var(--sans); font-size: 17px; line-height: 1.5; }
+
+#map { position: fixed; inset: 0; z-index: 0; }
+.maplibregl-ctrl-bottom-right { bottom: 24px; }
+/* Durante el recorrido el mapa no se opera: sin botones de zoom (tampoco en el orden del teclado) */
+body:not(.explorando) .maplibregl-ctrl-group { display: none; }
+/* Al explorar, los controles del mapa no quedan debajo del panel */
+body.explorando:has(#explore:not(.hidden)) .maplibregl-ctrl-bottom-right { right: 372px; }
+.maplibregl-cooperative-gesture-screen { font-family: var(--sans); }
+button:focus-visible, select:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--texto); outline-offset: 2px; }
+
+/* ---- recorrido ---- */
+#story { position: relative; z-index: 2; pointer-events: none; }
+.step { min-height: 100vh; display: flex; align-items: center; padding: 0 0 0 48px; }
+.step:first-child { align-items: flex-start; padding-top: 12vh; }
+.card { pointer-events: auto; width: 400px; max-width: calc(100vw - 32px); padding: 28px 30px 24px; background: var(--tarjeta); border-radius: 6px; box-shadow: 0 8px 30px rgba(0,0,0,0.14); opacity: 0.55; transition: opacity .3s; }
+.step.activa .card { opacity: 1; }
+.kicker { margin: 0 0 8px; font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-sec); }
+.cifra { margin: 0; font-family: var(--serif); font-weight: 300; font-size: 76px; line-height: .95; }
+.titulo-paso { margin: 8px 0 12px; font-family: var(--serif); font-weight: 600; font-size: 21px; line-height: 1.2; }
+.texto { margin: 0 0 12px; }
+.fuente { margin: 0; font-size: 12.5px; color: var(--texto-sec); }
+.fuente a { color: inherit; text-underline-offset: 2px; }
+.fuente a:hover { color: var(--texto); }
+/* texto solo para lectores de pantalla (p. ej., "se abre en otra pestaña") */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+.card-portada .titulo { margin: 8px 0 0; font-family: var(--serif); font-weight: 600; font-size: 48px; line-height: 1; white-space: nowrap; letter-spacing: -0.01em; }
+.card-portada .bajada { margin: 6px 0 18px; font-family: var(--serif); font-weight: 300; font-size: 26px; line-height: 1.15; color: var(--acento-portada); }
+.hint { color: var(--texto-sec); font-size: 14px; }
+.card-portada .descripcion { margin: 0 0 18px; font-size: 16px; line-height: 1.5; }
+.card-portada .fuente { margin-top: 14px; font-size: 11.5px; line-height: 1.4; }
+/* foto de la portada: igual que la del paso 1, pero también se ve en celular */
+.foto-portada { margin: -28px -30px 16px; }
+.foto-portada img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px 6px 0 0; background: var(--urbano, #e7e1d4); }
+.foto-portada figcaption { padding: 6px 30px 0; font-size: 12px; line-height: 1.35; color: var(--texto-sec); }
+/* botón "Desplazá para empezar": negro y papel (el azul es "Activo" en esta pieza) */
+.empezar { display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 10px 18px; font: inherit; font-size: 15px; font-weight: 600; color: var(--texto); background: transparent; border: 1.5px solid var(--texto); border-radius: 4px; cursor: pointer; transition: background .2s, color .2s; }
+.empezar:hover { background: var(--texto); color: var(--fondo); }
+.empezar:focus-visible { outline: 3px solid var(--texto); outline-offset: 3px; }
+.empezar-flecha { animation: empezar-baja 1.8s ease-in-out infinite; }
+@keyframes empezar-baja { 0%, 100% { transform: translateY(-2px); } 50% { transform: translateY(3px); } }
+@media (prefers-reduced-motion: reduce) { .empezar-flecha { animation: none; } .empezar { transition: none; } }
+.empezar.cargando .empezar-flecha { display: none; } /* "Cargando el mapa…" (main.js) */
+/* tarjeta final: "Explorá el mapa" y "Metodología", con el estilo del botón de la portada */
+.acciones-cierre { display: flex; flex-wrap: wrap; gap: 10px; margin: 4px 0 14px; }
+/* enlaces chicos: portada ("Ir directo al mapa · Metodología") y encabezado del panel */
+.accesos { margin: 12px 0 0; font-size: 14px; color: var(--texto-sec); }
+.enlace-chico { font-size: 14px; color: var(--texto); text-underline-offset: 2px; }
+.enlace-chico:hover { text-decoration-thickness: 2px; }
+
+/* ---- botones propios sobre el mapa (visualizador): satélite y ubicación ---- */
+.maplibregl-ctrl-group.botonera button { width: auto; min-width: 40px; height: 40px; padding: 0 10px; font: 600 14px/1 var(--sans); color: var(--texto); }
+.botonera .boton-ubicacion svg { display: block; margin: 0 auto; }
+/* activo: negro también con el mouse encima (el :hover de MapLibre lo aclararía) */
+.maplibregl-ctrl-group.botonera .boton-ubicacion.siguiendo, .maplibregl-ctrl-group.botonera .boton-ubicacion.siguiendo:hover { background: var(--texto); color: #fff; }
+.botonera .boton-ubicacion.buscando svg { animation: ubicando 1s ease-in-out infinite; }
+@keyframes ubicando { 50% { opacity: .3; } }
+@media (prefers-reduced-motion: reduce) { .botonera .boton-ubicacion.buscando svg { animation: none; } }
+/* avisos del mapa ("Estás fuera de la cuenca…") */
+.aviso-mapa { position: fixed; top: 16px; left: 50%; z-index: 6; transform: translateX(-50%); max-width: calc(100vw - 32px); margin: 0; padding: 8px 14px; font-size: 15px; color: var(--texto); background: var(--tarjeta-solida); border-radius: 6px; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); }
+
+/* ---- estados de la página (src/navegacion.js) ---- */
+body.modo-explorar #story, body.modo-explorar #leyenda { display: none; }
+.grafico { margin: 8px 0 12px; }
+/* tarjeta con foto (paso del Pozo N° 2): la foto va a sangre arriba */
+.foto-paso { margin: -28px -30px 16px; }
+.foto-paso img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; object-position: 45% 10%; border-radius: 6px 6px 0 0; background: var(--urbano, #e7e1d4); }
+.foto-paso figcaption { padding: 6px 30px 0; font-size: 12px; line-height: 1.35; color: var(--texto-sec); }
+
+/* marcadores del Pozo N° 2 y del pozo de la foto del paso 6 (el borde, del color de su estado, lo pone map.js) */
+.marcador-pozo { position: relative; z-index: 3; width: 34px; height: 34px; } /* arriba del lienzo de deck.gl (los pozos) */
+.marcador-halo { position: absolute; left: -11px; top: -11px; width: 56px; height: 56px; border-radius: 50%; border: 1px solid rgba(123,127,136,.55); box-sizing: border-box; }
+.marcador-icono { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; border-radius: 50%; background: #fffcf6; border: 2px solid var(--abandonado); box-sizing: border-box; box-shadow: 0 2px 10px rgba(0,0,0,.18); color: var(--texto); }
+.marcador-etiqueta { position: absolute; left: 51px; top: 5px; white-space: nowrap; padding: 4px 10px; background: var(--tarjeta); border-radius: 4px; font-size: 13px; font-weight: 600; box-shadow: 0 2px 8px rgba(0,0,0,.12); color: var(--texto); }
+.etiqueta-izquierda .marcador-etiqueta { left: auto; right: 51px; } /* pozo cerca del borde derecho (el de la foto del paso 6) */
+.card.error { border-left: 4px solid var(--a-abandonar); opacity: 1; margin: 16px 0 0 48px; }
+
+/* ---- leyenda compacta ---- */
+#leyenda { position: fixed; right: 16px; top: 16px; z-index: 3; background: var(--tarjeta); border-radius: 6px; padding: 10px 14px; font-size: 14px; box-shadow: 0 4px 16px rgba(0,0,0,.12); display: flex; flex-direction: column; gap: 4px; }
+#leyenda { transition: opacity .4s; }
+body.sin-leyenda #leyenda { opacity: 0; pointer-events: none; } /* portada y paso del Pozo N° 2 */
+#leyenda:empty { display: none; } /* hasta que llegan los pozos */
+.ley-titulo { margin: 0 0 2px; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-sec); }
+.ley-item.apagado { color: var(--texto-sec); }
+.ley-item.apagado .ley-dot { opacity: .35; }
+.ley-extra { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--borde); max-width: 230px; }
+.ley-extra .ley-item { align-items: flex-start; line-height: 1.3; }
+.ley-anillo { display: inline-block; width: 10px; height: 10px; margin: 3px 7px 0 0; flex-shrink: 0; border-radius: 50%; border: 1.3px solid var(--texto); }
+.ley-pobl { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--borde); display: flex; flex-direction: column; gap: 3px; }
+.ley-caja { display: inline-block; width: 14px; height: 11px; margin-right: 6px; flex-shrink: 0; opacity: .75; outline: 1px solid var(--borde); }
+.ley-item { display: flex; align-items: center; gap: 8px; }
+.ley-item b { margin-left: auto; padding-left: 12px; font-weight: 600; }
+.ley-dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; margin-right: 6px; }
+
+/* ---- panel de exploración ---- */
+#explore { position: fixed; right: 16px; top: 16px; bottom: 16px; z-index: 4; width: 340px; max-width: calc(100vw - 32px); overflow: auto; overscroll-behavior: contain; background: var(--tarjeta); border-radius: 6px; padding: 20px 22px; box-shadow: 0 8px 30px rgba(0,0,0,.16); }
+body:has(#explore:not(.hidden)) #leyenda { display: none; }
+.explore-head h2 { margin: 0; font-family: var(--serif); font-size: 22px; font-weight: 600; }
+.explore-head h2:focus { outline: none; }
+.explore-head h2:focus-visible { outline: 3px solid var(--texto); outline-offset: 2px; }
+.plegar { display: none; } /* solo en celular (ver la media query) */
+.explore-nav { display: flex; flex-wrap: wrap; gap: 0 16px; margin: -6px 0 6px; }
+.explore-nav .enlace-chico { display: inline-flex; align-items: center; gap: .3em; min-height: 32px; }
+.panel-cargando { display: none; }
+#explore.cargando .panel-cargando { display: inline; }
+#explore.cargando .panel-conteo, #explore.cargando #explore-cuerpo, #explore.cargando .plegar { display: none; }
+.muted { color: var(--texto-sec); font-size: 14px; margin: 4px 0 12px; }
+.filtro { margin: 10px 0; border: 0; padding: 0; }
+.filtro legend, .filtro:not(.filtro-inline) > label { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-sec); margin-bottom: 6px; }
+.filtro-inline { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.filtro-inline label { display: flex; align-items: center; flex: 1; font-size: 15px; }
+.filtro-inline .cuenta { margin-left: auto; padding-left: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.nota { margin: 4px 0 0; font-size: 12.5px; line-height: 1.35; color: var(--texto-sec); }
+/* Gráficos del panel: barra de estados (arriba de las casillas) y tramos de tiempo sin producir (botones con barra) */
+.barra-estados { display: flex; gap: 2px; height: 12px; margin: 2px 0 8px; }
+.barra-estados span { min-width: 2px; }
+.barra-estados span:first-child { border-radius: 2px 0 0 2px; }
+.barra-estados span:last-child { border-radius: 0 2px 2px 0; }
+.barra-estados .apagado { opacity: .25; }
+.filtro-inline .pct { flex-shrink: 0; width: 3.3em; text-align: right; font-size: 13px; color: var(--texto-sec); font-variant-numeric: tabular-nums; }
+.tramo { display: block; width: calc(100% + 16px); min-height: 44px; margin: 0 -8px 2px; padding: 5px 8px 7px; /* el texto alineado con el resto del panel */ text-align: left; font: inherit; font-size: 14.5px; line-height: 1.3; color: var(--texto); background: none; border: 1px solid transparent; border-radius: 4px; cursor: pointer; }
+.tramo:hover { border-color: var(--borde); }
+.tramo[aria-pressed="true"] { background: #fff; border-color: var(--texto); }
+.tramo-fila { display: flex; align-items: baseline; }
+.tramo .cuenta { margin-left: auto; padding-left: 12px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.pista { display: flex; height: 8px; margin-top: 4px; background: rgba(23, 24, 27, .06); border-radius: 0 2px 2px 0; }
+.pista-resto { background: var(--texto); }
+.pista-ab { background: var(--abandonado); }
+.lista-resultados { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.lista-resultados button { width: 100%; min-height: 40px; padding: 6px 10px; text-align: left; font: inherit; font-size: 14.5px; font-weight: 600; color: var(--texto); background: #fff; border: 1px solid var(--borde); border-radius: 4px; cursor: pointer; }
+.lista-resultados button:hover { border-color: var(--borde-control); }
+.lista-resultados .muted { font-weight: 400; font-size: 13px; }
+#f-resultados > p { margin: 6px 0 0; font-size: 14px; }
+select, input[type="search"] { width: 100%; padding: 8px 10px; font: inherit; font-size: 15px; border: 1px solid var(--borde-control); border-radius: 4px; background: #fff; color: var(--texto); }
+input[type="checkbox"] { width: 18px; height: 18px; }
+.hidden { display: none !important; }
+
+/* ---- ficha ---- */
+#ficha { position: fixed; left: 16px; bottom: 16px; z-index: 5; width: 360px; max-width: calc(100vw - 32px); max-height: calc(100vh - 32px); overflow: auto; overscroll-behavior: contain; background: var(--tarjeta); border-radius: 6px; padding: 18px 20px; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+#ficha .cerrar { position: absolute; right: 4px; top: 2px; width: 44px; height: 44px; border: 0; background: none; font-size: 22px; cursor: pointer; color: var(--texto-sec); }
+.ficha-estado { margin: 0 0 8px; font-family: var(--serif); font-size: 20px; font-weight: 600; display: flex; align-items: center; }
+#ficha dl { margin: 0; display: grid; grid-template-columns: 110px 1fr; gap: 4px 10px; font-size: 14.5px; }
+#ficha dt { color: var(--texto-sec); }
+#ficha dd { margin: 0; }
+.ficha-error { margin: 4px 40px 0 0; }
+/* tooltip de deck.gl al pasar sobre un pozo (el resto del estilo va en map.js) */
+.tooltip-pozo .ley-dot { width: 9px; height: 9px; margin-right: 5px; }
+/* Historias de la tarjeta 7: lista en la tarjeta, pozos marcados en el mapa y su ventana */
+.acciones-historias { margin: 14px 0 12px; }
+/* marcador: un ícono por tipo de incidente (el borde, del color del estado, lo pone map.js) y su etiqueta corta, siempre a la
+   vista en la computadora; en el celular, solo con la historia abierta o el foco (las diez no entran) */
+.marcador-historia { z-index: 3; width: 28px; height: 28px; padding: 0; border: 0; background: none; cursor: pointer; }
+.marcador-historia .marcador-halo { left: -8px; top: -8px; width: 44px; height: 44px; }
+/* el lado (etiqueta-izquierda) y el corrimiento hacia abajo o arriba (--dy) los elige map.js para que no se pisen */
+.marcador-historia .marcador-etiqueta { left: 38px; top: 50%; transform: translateY(calc(-50% + var(--dy, 0px))); }
+.marcador-historia.etiqueta-izquierda .marcador-etiqueta { left: auto; right: 38px; }
+.marcador-historia:hover, .marcador-historia:focus-visible, .marcador-historia.activa { z-index: 4; }
+.marcador-historia:hover .marcador-icono, .marcador-historia.activa .marcador-icono,
+.marcador-historia:hover .marcador-etiqueta, .marcador-historia.activa .marcador-etiqueta { background: var(--texto); color: #fffcf6; }
+.marcador-historia:focus-visible { outline: none; }
+.marcador-historia:focus-visible .marcador-icono { outline: 3px solid var(--texto); outline-offset: 2px; }
+/* ventana de la historia: la de Metodología, más angosta y a la medida del texto */
+.ventana.ventana-historia { width: min(640px, calc(100vw - 32px)); height: fit-content; max-height: 85vh; max-height: 85svh; margin: auto; } /* fit-content: un dialog modal con height auto se estira */
+.ventana.ventana-historia .ventana-cuerpo { height: auto; max-height: inherit; padding: 30px 36px 24px; }
+.ventana-historia #historia-meta { padding-right: 28px; } /* que la línea no pase por debajo del botón de cerrar (en el celular se corta en dos) */
+.ventana-historia h2 { font-family: "Fraunces", Georgia, serif; font-size: 26px; line-height: 1.2; margin: 4px 0 14px; }
+.ventana-historia p { margin: 0 0 12px; font-size: 17px; line-height: 1.5; }
+.ventana-historia .fuente { font-size: 13px; }
+/* «Seguir leyendo»: abre el resto del texto, el pozo según el registro y las fuentes */
+.historia-leer { display: block; width: 100%; min-height: 44px; margin: 4px 0 0; padding: 8px 12px; font: inherit; font-size: 15px; font-weight: 600; color: var(--texto); background: none; border: 1.5px solid var(--texto); border-radius: 4px; cursor: pointer; }
+.historia-leer:hover { background: var(--texto); color: var(--tarjeta-solida); }
+.historia-mas { padding-top: 14px; border-top: 1px solid var(--borde); }
+.historia-mas + .historia-leer { margin-top: 18px; }
+.ventana-historia #historia-texto:focus { outline: none; } /* recibe el foco al abrirse (lo pone story.js, no el teclado) */
+.historia-sub { margin: 18px 0 6px; font-size: 12px; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; color: var(--texto-sec); }
+/* el pozo según el registro: un recuadro por pozo, con el punto del color de su estado */
+.historia-pozos { list-style: none; margin: 0 0 8px; padding: 0; font-size: 15.5px; line-height: 1.4; }
+.historia-pozos li { display: flex; align-items: flex-start; gap: 4px; margin: 0 0 6px; padding: 9px 12px; background: #fff; border: 1px solid var(--borde); border-radius: 6px; }
+.historia-pozos .ley-dot { margin-top: 5px; }
+.historia-estado { display: inline-block; margin-left: 8px; padding: 0 8px; border-radius: 999px; background: #eceae6; color: #3f4147; font-size: 13px; }
+.historia-op { color: var(--texto-sec); font-size: 13.5px; }
+.ventana-historia .historia-nota { font-size: 13px; color: var(--texto-sec); }
+.historia-foto { margin: 0 0 14px; }
+.historia-foto img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--urbano, #e7e1d4); }
+.historia-foto figcaption { margin-top: 4px; font-size: 12px; color: var(--texto-sec); }
+/* Anterior/Siguiente quedan al pie aunque la historia (con foto) no entre en la ventana y haya que desplazarla */
+.historia-nav { position: sticky; bottom: -24px; display: flex; justify-content: space-between; gap: 12px; margin: 18px -36px -24px; padding: 12px 36px 24px; background: var(--tarjeta-solida); }
+.empezar[hidden] { display: none; } /* .empezar es inline-flex: sin esto, [hidden] no oculta */
+.historia-nav [data-historia-paso="1"] { margin-left: auto; } /* «Siguiente» / «Cerrar» siempre a la derecha */
+
+/* Cartel de radio censal o barrio (visualizador) */
+/* Mira del teclado en el visualizador: el punto que consulta Enter (ver map.js) */
+.mira-teclado { position: absolute; width: 26px; height: 26px; margin: -13px 0 0 -13px; pointer-events: none; z-index: 2; display: none; }
+.mira-teclado.visible { display: block; }
+.mira-teclado::before, .mira-teclado::after { content: ''; position: absolute; background: var(--texto); box-shadow: 0 0 0 1.5px #fff; }
+.mira-teclado::before { left: 12px; top: 0; width: 2px; height: 26px; }
+.mira-teclado::after { top: 12px; left: 0; height: 2px; width: 26px; }
+/* Arriba del lienzo de deck.gl (los pozos) y debajo del panel (z-index 4) */
+.cartel-area { z-index: 3; }
+.cartel-area .maplibregl-popup-content { background: rgba(255, 252, 246, 0.97); color: var(--texto); font: 14px/1.35 "Source Sans 3", system-ui, sans-serif; padding: 8px 30px 8px 12px; border-radius: 4px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15); }
+.cartel-area .maplibregl-popup-content p { margin: 0; }
+.cartel-area .cartel-titulo { font-weight: 600; margin-bottom: 2px; }
+.cartel-area .maplibregl-popup-close-button { width: 28px; height: 28px; font-size: 20px; color: var(--texto); }
+.cartel-area .maplibregl-popup-close-button:focus-visible { outline: 2px solid var(--texto); outline-offset: -2px; }
+.cartel-area.maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: rgba(255, 252, 246, 0.97); }
+.cartel-area.maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: rgba(255, 252, 246, 0.97); }
+.tooltip-sec { font-size: 12.5px; color: var(--texto-sec); }
+
+/* ---- metodología ---- */
+/* ---- ventana de Metodología (<dialog>, src/navegacion.js) ---- */
+.ventana { width: min(800px, calc(100vw - 32px)); max-width: none; height: 80vh; height: 80svh; max-height: none; padding: 0; border: 0; border-radius: 8px; background: var(--tarjeta-solida); color: var(--texto); box-shadow: 0 20px 60px rgba(0, 0, 0, .28); }
+.ventana::backdrop { background: rgba(23, 24, 27, .5); }
+.ventana-cuerpo { height: 100%; overflow: auto; overscroll-behavior: contain; padding: 32px 40px 28px; }
+.ventana .cerrar { position: absolute; top: 6px; right: 8px; z-index: 1; width: 44px; height: 44px; border: 0; background: none; font-size: 26px; line-height: 1; cursor: pointer; color: var(--texto-sec); }
+.ventana .cerrar:hover { color: var(--texto); }
+html:has(.ventana[open]) { overflow: hidden; } /* la página de atrás no se desplaza */
+/* Ventana del video (#video): se ajusta al video 16:9; el reproductor lo crea navegacion.js al abrirla */
+.ventana.ventana-video { width: min(1000px, calc(100vw - 32px)); height: fit-content; max-height: none; margin: auto; }
+.ventana.ventana-video .ventana-cuerpo { height: auto; padding: 16px 20px 20px; }
+.video-titulo { margin: 0 44px 12px 0; font-family: var(--serif); font-size: 21px; font-weight: 600; line-height: 1.2; }
+.video-marco { position: relative; aspect-ratio: 16 / 9; background: var(--texto); border-radius: 4px; overflow: hidden; }
+.video-marco iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.metodologia h2 { margin: 0 40px 12px 0; font-family: var(--serif); font-size: 32px; font-weight: 600; line-height: 1.15; }
+.metodologia h3 { margin: 28px 0 8px; font-family: var(--serif); font-size: 21px; font-weight: 600; line-height: 1.2; }
+.metodologia h4 { margin: 16px 0 4px; font-size: 16px; font-weight: 600; line-height: 1.3; } /* subtítulos de «Uso de inteligencia artificial» */
+.metodologia p { margin: 0 0 12px; }
+.metodologia a { color: var(--texto); text-underline-offset: 2px; }
+.metodologia code { font-size: .9em; }
+.met-lista { margin: 0 0 12px; padding-left: 1.2em; }
+.met-lista li { margin: 5px 0; }
+.met-tabla-scroll { overflow-x: auto; }
+.met-tabla { width: 100%; margin: 4px 0 14px; border-collapse: collapse; font-size: 15px; }
+.met-tabla caption { padding-bottom: 6px; text-align: left; font-size: 13px; color: var(--texto-sec); }
+.met-tabla th, .met-tabla td { padding: 4px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--borde); }
+.met-tabla thead th { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--texto-sec); }
+.met-tabla tbody th { font-weight: 600; white-space: nowrap; }
+.met-tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* lugar reservado para un texto que falta: se ve a propósito, para que nadie lo olvide antes de publicar */
+.pendiente { padding: 8px 12px; border: 1px dashed var(--borde-control); color: var(--texto-sec); font-style: italic; list-style: none; }
+
+/* ---- móvil: tarjetas abajo, mapa arriba fijo ---- */
+@media (max-width: 700px) {
+  html, body { font-size: 16px; }
+  .step { padding: 55vh 16px 0; align-items: flex-end; }
+  .step:first-child { padding-top: 12vh; align-items: flex-start; }
+  .card { width: 100%; padding: 20px 18px; }
+  .cifra { font-size: 56px; }
+  .card-portada .titulo { font-size: 42px; }
+  .card-portada .bajada { font-size: 23px; }
+  .foto-paso { display: none; } /* en celular la tarjeta del Pozo N° 2 va sin foto */
+  .marcador-pozo.solo-compu { display: none; } /* el pozo de la foto del paso 6: sin la foto, el marcador no dice nada */
+  .marcador-historia .marcador-etiqueta { display: none; }
+  .marcador-historia:focus-visible .marcador-etiqueta, .marcador-historia.activa .marcador-etiqueta { display: block; }
+  .foto-portada { margin: -20px -18px 14px; }
+  .foto-portada figcaption { padding: 6px 18px 0; }
+  #leyenda { right: 12px; top: 12px; font-size: 12.5px; padding: 8px 10px; }
+  .step { min-height: 100svh; padding-top: 55svh; } /* svh: alto con la barra del navegador visible (iOS) */
+  #explore { left: 12px; right: 12px; top: auto; bottom: 12px; width: auto; max-height: 60vh; max-height: 60svh; padding: 14px 16px; }
+  /* hoja inferior plegable: plegada queda solo el encabezado y el mapa se ve entero */
+  .explore-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; }
+  .explore-head h2 { flex-basis: 100%; font-size: 20px; }
+  .explore-nav { flex-basis: 100%; }
+  .explore-head .muted { margin: 4px 0; }
+  .plegar { display: inline-flex; align-items: center; min-height: 44px; padding: 6px 12px; font: inherit; font-size: 14px; font-weight: 600; color: var(--texto); background: #fff; border: 1px solid var(--borde-control); border-radius: 4px; cursor: pointer; }
+  #explore.plegado #explore-cuerpo { display: none; }
+  /* en celular se acerca con dos dedos: sin botones de zoom; al explorar, los créditos del mapa suben arriba a la
+     derecha (el panel ocupa el pie y la leyenda flotante no está) */
+  .maplibregl-ctrl-group:not(.botonera) { display: none; }
+  .aviso-mapa { left: 12px; right: 64px; transform: none; } /* deja libre la columna de botones de la derecha */
+  body.explorando .maplibregl-ctrl-bottom-right,
+  body.explorando:has(#explore:not(.hidden)) .maplibregl-ctrl-bottom-right { top: 8px; right: 0; bottom: auto; }
+  #ficha { max-height: calc(100svh - 24px); }
+  .card.error { margin: 12px 16px 0; }
+  #ficha { left: 12px; right: 12px; width: auto; }
+  .ventana { width: 100vw; max-width: 100vw; height: 100vh; height: 100dvh; max-height: 100dvh; margin: 0; border-radius: 0; }
+  .ventana-cuerpo { padding: 24px 18px; }
+}
